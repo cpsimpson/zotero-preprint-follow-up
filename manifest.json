@@ -1,0 +1,14 @@
+{
+  "manifest_version": 2,
+  "name": "Preprint Follow-Up",
+  "version": "0.1.0",
+  "description": "Find likely peer-reviewed journal versions of preprints in your Zotero library.",
+  "author": "Caroline Simpson",
+  "homepage_url": "https://github.com/cpsimpson/zotero-preprint-follow-up",
+  "applications": {
+    "zotero": {
+      "id": "zotero-preprint-follow-up@cpsimpson.github.com",
+      "strict_min_version": "9.0"
+    }
+  }
+}
