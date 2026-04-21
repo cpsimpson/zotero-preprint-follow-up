@@ -15,6 +15,8 @@ This plugin adds a right-click action to Zotero items to look for likely peer-re
 
 ## Install
 
-1. From this repository root, create an `.xpi` archive containing `manifest.json`, `bootstrap.js`, and `README.md`.
+1. From this repository root, run `make xpi`.
 2. In Zotero, open `Tools -> Plugins`.
 3. Click the gear icon, choose `Install Plugin From File...`, and select the `.xpi`.
+
+The built plugin file is written to `dist/`.
