@@ -1,0 +1,115 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to create/use (defaults to v<manifest version>)"
+        required: false
+        type: string
+      prerelease:
+        description: "Mark release as prerelease"
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Compute release metadata
+        id: meta
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="$(jq -r '.version' manifest.json)"
+          ADDON_ID="$(jq -r '.applications.zotero.id' manifest.json)"
+          MIN_VERSION="$(jq -r '.applications.zotero.strict_min_version' manifest.json)"
+          MAX_VERSION="$(jq -r '.applications.zotero.strict_max_version // empty' manifest.json)"
+          PLUGIN_NAME="zotero-preprint-follow-up"
+
+          if [[ "${GITHUB_EVENT_NAME}" == "push" ]]; then
+            TAG_NAME="${GITHUB_REF_NAME}"
+            if [[ "${TAG_NAME}" != "v${VERSION}" ]]; then
+              echo "Release tag (${TAG_NAME}) must match manifest version (v${VERSION})."
+              exit 1
+            fi
+          else
+            INPUT_TAG="${{ inputs.tag }}"
+            if [[ -n "${INPUT_TAG}" ]]; then
+              TAG_NAME="${INPUT_TAG}"
+            else
+              TAG_NAME="v${VERSION}"
+            fi
+          fi
+
+          XPI_NAME="${PLUGIN_NAME}-${VERSION}.xpi"
+          UPDATE_LINK="https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG_NAME}/${XPI_NAME}"
+
+          {
+            echo "version=${VERSION}"
+            echo "addon_id=${ADDON_ID}"
+            echo "min_version=${MIN_VERSION}"
+            echo "max_version=${MAX_VERSION}"
+            echo "tag_name=${TAG_NAME}"
+            echo "xpi_name=${XPI_NAME}"
+            echo "update_link=${UPDATE_LINK}"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Build XPI
+        run: make xpi
+
+      - name: Generate updates.json
+        shell: bash
+        run: |
+          set -euo pipefail
+          XPI_PATH="dist/${{ steps.meta.outputs.xpi_name }}"
+          UPDATE_HASH="sha256:$(sha256sum "${XPI_PATH}" | awk '{print $1}')"
+
+          jq -n \
+            --arg addon_id "${{ steps.meta.outputs.addon_id }}" \
+            --arg version "${{ steps.meta.outputs.version }}" \
+            --arg update_link "${{ steps.meta.outputs.update_link }}" \
+            --arg update_hash "${UPDATE_HASH}" \
+            --arg min_version "${{ steps.meta.outputs.min_version }}" \
+            --arg max_version "${{ steps.meta.outputs.max_version }}" \
+            '{
+              addons: {
+                ($addon_id): {
+                  updates: [
+                    {
+                      version: $version,
+                      update_link: $update_link,
+                      update_hash: $update_hash,
+                      applications: {
+                        zotero:
+                          (
+                            { strict_min_version: $min_version }
+                            + (if $max_version == "" then {} else { strict_max_version: $max_version } end)
+                          )
+                      }
+                    }
+                  ]
+                }
+              }
+            }' > dist/updates.json
+
+      - name: Publish GitHub release assets
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.meta.outputs.tag_name }}
+          generate_release_notes: true
+          prerelease: ${{ github.event_name == 'workflow_dispatch' && inputs.prerelease || false }}
+          files: |
+            dist/${{ steps.meta.outputs.xpi_name }}
+            dist/updates.json

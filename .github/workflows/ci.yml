@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Validate manifest metadata
+        run: |
+          set -euo pipefail
+          jq -e '.applications.zotero.id' manifest.json >/dev/null
+          jq -e '.applications.zotero.update_url' manifest.json >/dev/null
+          jq -e '.applications.zotero.strict_min_version' manifest.json >/dev/null
+          jq -e '.version' manifest.json >/dev/null
+
+      - name: Check bootstrap syntax
+        run: node --check bootstrap.js
+
+      - name: Build XPI
+        run: make xpi
+
+      - name: Verify packaged files
+        run: |
+          set -euo pipefail
+          VERSION="$(jq -r '.version' manifest.json)"
+          XPI="dist/zotero-preprint-follow-up-${VERSION}.xpi"
+          test -f "${XPI}"
+          unzip -l "${XPI}" | grep -q "manifest.json"
+          unzip -l "${XPI}" | grep -q "bootstrap.js"
