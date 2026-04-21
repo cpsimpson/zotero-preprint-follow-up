@@ -7,9 +7,9 @@ XPI := $(DIST_DIR)/$(PLUGIN_NAME)-$(VERSION).xpi
 
 xpi: $(XPI)
 
-$(XPI): manifest.json bootstrap.js README.md
+$(XPI): manifest.json bootstrap.js README.md LICENSE
 	mkdir -p $(DIST_DIR)
-	zip -j -q $(XPI) manifest.json bootstrap.js README.md
+	zip -j -q $(XPI) manifest.json bootstrap.js README.md LICENSE
 	@echo "Built $(XPI)"
 
 clean:

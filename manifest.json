@@ -8,6 +8,7 @@
   "applications": {
     "zotero": {
       "id": "zotero-preprint-follow-up@cpsimpson.github.com",
+      "update_url": "https://github.com/cpsimpson/zotero-preprint-follow-up/releases/latest/download/updates.json",
       "strict_min_version": "9.0"
     }
   }

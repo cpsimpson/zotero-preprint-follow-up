@@ -20,3 +20,15 @@ This plugin adds a right-click action to Zotero items to look for likely peer-re
 3. Click the gear icon, choose `Install Plugin From File...`, and select the `.xpi`.
 
 The built plugin file is written to `dist/`.
+
+## Automatic Updates
+
+- Plugin update manifest URL:
+  `https://github.com/cpsimpson/zotero-preprint-follow-up/releases/latest/download/updates.json`
+- Releases published from Git tags (for example `v0.1.1`) include:
+  - `zotero-preprint-follow-up-<version>.xpi`
+  - `updates.json`
+
+## License
+
+MIT (see `LICENSE`).
